@@ -285,7 +285,7 @@ public class CPInstance
           System.out.print(", ");
           System.out.println(Arrays.toString(solvedAssignments[employee]));
         }
-         Uncomment this: for poor man's Gantt Chart to display schedules
+//         Uncomment this: for poor man's Gantt Chart to display schedules
         prettyPrint(numEmployees, numDays, beginED, endED);
 
       }
