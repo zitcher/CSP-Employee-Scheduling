@@ -9,6 +9,8 @@ import java.io.FileNotFoundException;
 
 import java.util.Scanner;
 
+import java.util.Arrays;
+
 public class CPInstance
 {
   // BUSINESS parameters
@@ -171,8 +173,11 @@ public class CPInstance
                       cp.eq(hoursWorked[day][employee], 0)
               ),
               cp.and(
-                cp.ge(hoursWorked[day][employee], minConsecutiveWork),
-                cp.le(hoursWorked[day][employee], maxDailyWork)
+                cp.and(
+                  cp.ge(hoursWorked[day][employee], minConsecutiveWork),
+                  cp.le(hoursWorked[day][employee], maxDailyWork)
+                ),
+                cp.neq(assignments[day][employee], 0)
               )
             )
           );
@@ -187,9 +192,9 @@ public class CPInstance
             hoursWorkedThisWeek[day] = hoursWorked[week * 7 + day][employee];
           }
           // must work less than 40
-          cp.add(cp.le(cp.sum(hoursWorkedThisWeek), 40));
+          cp.add(cp.le(cp.sum(hoursWorkedThisWeek), maxWeeklyWork));
           // must work more than 20
-          cp.add(cp.ge(cp.sum(hoursWorkedThisWeek), 20));
+          cp.add(cp.ge(cp.sum(hoursWorkedThisWeek), minWeeklyWork));
         }
       }
 //
@@ -256,9 +261,14 @@ public class CPInstance
             }
           }
         }
-        
-        
 
+
+        for (int employee = 0; employee < numEmployees; employee++) {
+          System.out.print("E"+(employee+1)+": ");
+          System.out.print(Arrays.toString(solvedHours[employee]));
+          System.out.print(", ");
+          System.out.println(Arrays.toString(solvedAssignments[employee]));
+        }
         // Uncomment this: for poor man's Gantt Chart to display schedules
         prettyPrint(numEmployees, numDays, beginED, endED);	
       }
