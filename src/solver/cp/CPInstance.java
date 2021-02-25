@@ -30,6 +30,9 @@ public class CPInstance
   int maxConsecutiveNightShift;
   int maxTotalNightShift;
 
+  // Solution
+  String result;
+
   // ILOG CP Solver
   IloCP cp;
     
@@ -107,6 +110,9 @@ public class CPInstance
     }
   }
 
+  public String getResult() {
+    return this.result;
+  }
   public void solve()
   {
     try
@@ -197,25 +203,25 @@ public class CPInstance
           cp.add(cp.ge(cp.sum(hoursWorkedThisWeek), minWeeklyWork));
         }
       }
-//
-//      // It is known that night shifts are stressful, therefore night shifts cannot follow each other
-//      // max number of total night shifts per employee
-//      for (int employee = 0; employee < numEmployees; employee++) {
-//        IloIntExpr[] employeeShifts = new IloIntExpr[numDays];
-//        for (int day = 0; day < numDays; day++) {
-//          employeeShifts[day] = assignments[day][employee];
-//        }
-//        cp.add(cp.ge(cp.count(employeeShifts, 1), maxTotalNightShift));
-//
-//        for (int day = 0; day < numDays - maxConsecutiveNightShift; day++) {
-//          IloIntExpr[] employeeConcecutiveShifts = new IloIntExpr[maxConsecutiveNightShift + 1];
-//          for (int concec = 0; concec < maxConsecutiveNightShift + 1; concec++) {
-//            employeeConcecutiveShifts[concec] = assignments[day + concec][employee];
-//          }
-//
-//          cp.add(cp.le(cp.count(employeeConcecutiveShifts, 1), maxConsecutiveNightShift));
-//        }
-//      }
+
+      // It is known that night shifts are stressful, therefore night shifts cannot follow each other
+      // max number of total night shifts per employee
+      for (int employee = 0; employee < numEmployees; employee++) {
+        IloIntExpr[] employeeShifts = new IloIntExpr[numDays];
+        for (int day = 0; day < numDays; day++) {
+          employeeShifts[day] = assignments[day][employee];
+        }
+        cp.add(cp.ge(cp.count(employeeShifts, 1), maxTotalNightShift));
+
+        for (int day = 0; day < numDays - maxConsecutiveNightShift; day++) {
+          IloIntExpr[] employeeConcecutiveShifts = new IloIntExpr[maxConsecutiveNightShift + 1];
+          for (int concec = 0; concec < maxConsecutiveNightShift + 1; concec++) {
+            employeeConcecutiveShifts[concec] = assignments[day + concec][employee];
+          }
+
+          cp.add(cp.le(cp.count(employeeConcecutiveShifts, 1), maxConsecutiveNightShift));
+        }
+      }
       
       
       
@@ -262,6 +268,16 @@ public class CPInstance
           }
         }
 
+        this.result = "";
+        for (int employee = 0; employee < numEmployees; employee++) {
+          for (int day = 0; day < numDays; day++) {
+            if (result.equals("")) {
+              result += beginED[employee][day] + " " + endED[employee][day];
+            } else {
+              result += " " + beginED[employee][day] + " " + endED[employee][day];
+            }
+          }
+        }
 
         for (int employee = 0; employee < numEmployees; employee++) {
           System.out.print("E"+(employee+1)+": ");
@@ -269,8 +285,9 @@ public class CPInstance
           System.out.print(", ");
           System.out.println(Arrays.toString(solvedAssignments[employee]));
         }
-        // Uncomment this: for poor man's Gantt Chart to display schedules
-        prettyPrint(numEmployees, numDays, beginED, endED);	
+         Uncomment this: for poor man's Gantt Chart to display schedules
+        prettyPrint(numEmployees, numDays, beginED, endED);
+
       }
       else
       {
