@@ -109,10 +109,7 @@ public class CPInstance
   {
     try
     {
-      cp = new IloCP();
-
-      // TODO: Employee Scheduling Model Goes Here
-        
+      cp = new IloCP();        
       // Important: Do not change! Keep these parameters as is
       cp.setParameter(IloCP.IntParam.Workers, 1);
       cp.setParameter(IloCP.DoubleParam.TimeLimit, 300);
@@ -120,12 +117,147 @@ public class CPInstance
   
       // Uncomment this: to set the solver output level if you wish
       // cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
+
+
+      // Assigned Shifts
+      IloIntVar[][] assignments = new IloIntVar[numDays][numEmployees];
+      for (int day = 0; day < numDays; day++) {
+        for (int shift = 0; shift < numEmployees; shift++) {
+          // 4 possible shifts (0 to 3), each employee can only be assigned to a single shift
+          assignments[day][shift] = cp.intVar(0, numShifts - 1);
+        }
+      }
+      
+      // there is a certain minimum demand that needs to be met on the number of employees needed every day for every shift
+      // minDemandDayShift[day][shift]
+      for (int day = 0; day < numDays; day++) {
+        for (int shift = 0; shift < numShifts - 1; shift++) {
+          int demand = minDemandDayShift[day][shift];
+          cp.add(cp.ge(cp.count(assignments[day], shift), demand));
+        }
+      }
+
+      // the first 4 days of the schedule is treated specially where employees are assigned to unique shifts.
+      for (int employee = 0; employee < numEmployees; employee++) {
+        IloIntExpr[] clique = new IloIntExpr[4];
+        clique[0] = assignments[0][employee];
+        clique[1] = assignments[1][employee];
+        clique[2] = assignments[2][employee];
+        clique[3] = assignments[3][employee];
+
+        // alldiff
+        cp.add(cp.allDiff(clique));
+
+        // same as alldiff, 0 + 1 + 2 + 3 = 6
+        // test if any of these speed up
+        cp.add(cp.le(cp.sum(clique), 6));
+        cp.add(cp.ge(cp.sum(clique), 6));
+        cp.add(cp.eq(cp.sum(clique), 6));
+      }
+      
+      int[] workableHours = new int[]{0, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40};
+
+      // Employees cannot work more than 8 hours per day and less than 4 hours per day
+      IloIntVar[][] hoursWorked = new IloIntVar[numDays][numEmployees];
+      for (int day = 0; day < numDays; day++) {
+        for (int employee = 0; employee < numEmployees; employee++) {
+          // must work either 0 or 20-40 hours
+          hoursWorked[day][employee] = cp.intVar(workableHours);
+
+          // must work zero hours if shift is zero
+          // otherwise must work over 20
+          cp.add(
+            cp.ifThenElse(
+              cp.eq(assignments[day][employee], 0), 
+              cp.eq(hoursWorked[day][employee], 0), 
+              cp.neq(hoursWorked[day][employee], 0)
+            )
+          );
+        }
+      }
+
+      // hours worked cannot exceed the standard 40-hours per week and it should not be less than 20-hours per week
+      for (int week = 0; week < numWeeks; week++){
+        for (int employee = 0; employee < numEmployees; employee++) {
+          IloIntExpr[] hoursWorkedThisWeek = new IloIntExpr[7];
+          for (int day = 0; day < hoursWorkedThisWeek.length; day++) {
+            hoursWorkedThisWeek[day] = hoursWorked[week * 7 + day][employee];
+          }
+          // must work less than 40
+          cp.add(cp.le(cp.sum(hoursWorkedThisWeek), 40));
+          // must work more than 20
+          cp.add(cp.ge(cp.sum(hoursWorkedThisWeek), 20));
+        }
+      }
+      
+      // It is known that night shifts are stressful, therefore night shifts cannot follow each other
+      // max number of total night shifts per employee
+      for (int employee = 0; employee < numEmployees; employee++) {
+        IloIntExpr[] employeeShifts = new IloIntExpr[numDays];
+        for (int day = 0; day < numDays; day++) {
+          employeeShifts[day] = assignments[day][employee];
+        }
+        cp.add(cp.ge(cp.count(employeeShifts, 1), maxTotalNightShift));
+
+        for (int day = 0; day < numDays - maxConsecutiveNightShift; day++) {
+          IloIntExpr[] employeeConcecutiveShifts = new IloIntExpr[maxConsecutiveNightShift + 1];
+          for (int concec = 0; concec < maxConsecutiveNightShift + 1; concec++) {
+            employeeConcecutiveShifts[concec] = assignments[day + concec][employee];
+          }
+
+          cp.add(cp.le(cp.count(employeeConcecutiveShifts, 1), maxConsecutiveNightShift));
+        }
+      }
+      
+      
+      
       if(cp.solve())
       {
         cp.printInformation();
+
+
+        // beginED int[e][d] the hour employee e begins work on day d, -1 if not working
+        // endED   int[e][d] the hour employee e ends work on day d, -1 if not working
+        int[][] beginED = new int[numEmployees][numDays];
+        int[][] endED = new int[numEmployees][numDays];
+
+        int[][] solvedAssignments = new int[numEmployees][numDays];
+        for (int employee = 0; employee < numEmployees; employee++) {
+          for (int day = 0; day < numDays; day++) {
+            solvedAssignments[employee][day] = (int)cp.getValue(assignments[day][employee]);
+          }
+        }          
+
+        int[][] solvedHours = new int[numEmployees][numDays];
+        for (int employee = 0; employee < numEmployees; employee++) {
+          for (int day = 0; day < numDays; day++) {
+            solvedHours[employee][day] = (int)cp.getValue(hoursWorked[day][employee]);
+          }
+        }
+
+        // Fill beginED and endED arrays
+        for (int employee = 0; employee < numEmployees; employee++) {
+          for (int day = 0; day < numDays; day++) {
+            if (solvedAssignments[employee][day] == 0) {
+              beginED[employee][day] = -1;
+              endED[employee][day] = -1;
+            } else if (solvedAssignments[employee][day] == 1) {
+              beginED[employee][day] = 0 ;
+              endED[employee][day] = 0 + solvedHours[employee][day];
+            } else if (solvedAssignments[employee][day] == 2) {
+              beginED[employee][day] = 8;
+              endED[employee][day] = 8 + solvedHours[employee][day];
+            } else if (solvedAssignments[employee][day] == 3) {
+              beginED[employee][day] = 16;
+              endED[employee][day] = 16 + solvedHours[employee][day];
+            }
+          }
+        }
         
+        
+
         // Uncomment this: for poor man's Gantt Chart to display schedules
-        // prettyPrint(numEmployees, numDays, beginED, endED);	
+        prettyPrint(numEmployees, numDays, beginED, endED);	
       }
       else
       {
