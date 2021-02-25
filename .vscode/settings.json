@@ -1,0 +1,6 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "/Applications/CPLEX_Studio201/cpoptimizer/lib/ILOG.CP.jar"
+    ]
+}
