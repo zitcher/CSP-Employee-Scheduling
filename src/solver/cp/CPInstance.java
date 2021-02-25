@@ -35,67 +35,67 @@ public class CPInstance
   {
     try
     {
-      Scanner read = new Scanner(new File(fileName));
-      
-      while (read.hasNextLine())
-      {
-        String line = read.nextLine();
-        String[] values = line.split(" ");
-        if(values[0].equals("Business_numWeeks:"))
+      try (Scanner read = new Scanner(new File(fileName))) {
+        while (read.hasNextLine())
         {
-          numWeeks = Integer.parseInt(values[1]);
-        }
-        else if(values[0].equals("Business_numDays:"))
-        {
-          numDays = Integer.parseInt(values[1]);
-        }
-        else if(values[0].equals("Business_numEmployees:"))
-        {
-          numEmployees = Integer.parseInt(values[1]);
-        }
-        else if(values[0].equals("Business_numShifts:"))
-        {
-          numShifts = Integer.parseInt(values[1]);
-        }
-        else if(values[0].equals("Business_numIntervalsInDay:"))
-        {
-          numIntervalsInDay = Integer.parseInt(values[1]);
-        }
-        else if(values[0].equals("Business_minDemandDayShift:"))
-        {
-          int index = 1;
-          minDemandDayShift = new int[numDays][numShifts];
-          for(int d=0; d<numDays; d++)
-            for(int s=0; s<numShifts; s++)
-              minDemandDayShift[d][s] = Integer.parseInt(values[index++]);
-        }
-        else if(values[0].equals("Business_minDailyOperation:"))
-        {
-          minDailyOperation = Integer.parseInt(values[1]);
-        }
-        else if(values[0].equals("Employee_minConsecutiveWork:"))
-        {
-          minConsecutiveWork = Integer.parseInt(values[1]);
-        }
-        else if(values[0].equals("Employee_maxDailyWork:"))
-        {
-          maxDailyWork = Integer.parseInt(values[1]);
-        }
-        else if(values[0].equals("Employee_minWeeklyWork:"))
-        {
-          minWeeklyWork = Integer.parseInt(values[1]);
-        }
-        else if(values[0].equals("Employee_maxWeeklyWork:"))
-        {
-          maxWeeklyWork = Integer.parseInt(values[1]);
-        }
-        else if(values[0].equals("Employee_maxConsecutiveNigthShift:"))
-        {
-          maxConsecutiveNightShift = Integer.parseInt(values[1]);
-        }
-        else if(values[0].equals("Employee_maxTotalNigthShift:"))
-        {
-          maxTotalNightShift = Integer.parseInt(values[1]);
+          String line = read.nextLine();
+          String[] values = line.split(" ");
+          if(values[0].equals("Business_numWeeks:"))
+          {
+            numWeeks = Integer.parseInt(values[1]);
+          }
+          else if(values[0].equals("Business_numDays:"))
+          {
+            numDays = Integer.parseInt(values[1]);
+          }
+          else if(values[0].equals("Business_numEmployees:"))
+          {
+            numEmployees = Integer.parseInt(values[1]);
+          }
+          else if(values[0].equals("Business_numShifts:"))
+          {
+            numShifts = Integer.parseInt(values[1]);
+          }
+          else if(values[0].equals("Business_numIntervalsInDay:"))
+          {
+            numIntervalsInDay = Integer.parseInt(values[1]);
+          }
+          else if(values[0].equals("Business_minDemandDayShift:"))
+          {
+            int index = 1;
+            minDemandDayShift = new int[numDays][numShifts];
+            for(int d=0; d<numDays; d++)
+              for(int s=0; s<numShifts; s++)
+                minDemandDayShift[d][s] = Integer.parseInt(values[index++]);
+          }
+          else if(values[0].equals("Business_minDailyOperation:"))
+          {
+            minDailyOperation = Integer.parseInt(values[1]);
+          }
+          else if(values[0].equals("Employee_minConsecutiveWork:"))
+          {
+            minConsecutiveWork = Integer.parseInt(values[1]);
+          }
+          else if(values[0].equals("Employee_maxDailyWork:"))
+          {
+            maxDailyWork = Integer.parseInt(values[1]);
+          }
+          else if(values[0].equals("Employee_minWeeklyWork:"))
+          {
+            minWeeklyWork = Integer.parseInt(values[1]);
+          }
+          else if(values[0].equals("Employee_maxWeeklyWork:"))
+          {
+            maxWeeklyWork = Integer.parseInt(values[1]);
+          }
+          else if(values[0].equals("Employee_maxConsecutiveNigthShift:"))
+          {
+            maxConsecutiveNightShift = Integer.parseInt(values[1]);
+          }
+          else if(values[0].equals("Employee_maxTotalNigthShift:"))
+          {
+            maxTotalNightShift = Integer.parseInt(values[1]);
+          }
         }
       }
     }
