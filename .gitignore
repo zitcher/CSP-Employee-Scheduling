@@ -62,3 +62,5 @@ Network Trash Folder
 Temporary Items
 .apdisk
 *.sh
+*.xml
+*.iml

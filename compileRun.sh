@@ -20,7 +20,7 @@ input=$1
 export ILOG_LICENSE_FILE=/gpfs/main/sys/shared/psfu/local/projects/cplex/ilm/current/linux/access.site.ilm
 
 # export the solver libraries into the path
-export LD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/Applications/CPLEX_Studio201/cpoptimizer/bin/x86-64_osx:/Applications/CPLEX_Studio201/cplex/bin/x86-64_osx
+export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/Applications/CPLEX_Studio201/cpoptimizer/bin/x86-64_osx:/Applications/CPLEX_Studio201/cplex/bin/x86-64_osx:/Applications/CPLEX_Studio201/opl/bin/x86-64_osx
 
 # add the solver jar to the classpath and run
 java -cp /Applications/CPLEX_Studio201/cpoptimizer/lib/ILOG.CP.jar:src solver.cp.Main $input
