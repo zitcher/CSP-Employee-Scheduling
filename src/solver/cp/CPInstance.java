@@ -154,7 +154,7 @@ public class CPInstance
         cp.add(cp.eq(cp.sum(clique), 6));
       }
       
-      int[] workableHours = new int[]{0, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40};
+      int[] workableHours = new int[]{0, 4, 5, 6, 7, 8};
 
       // Employees cannot work more than 8 hours per day and less than 4 hours per day
       IloIntVar[][] hoursWorked = new IloIntVar[numDays][numEmployees];
@@ -164,30 +164,34 @@ public class CPInstance
           hoursWorked[day][employee] = cp.intVar(workableHours);
 
           // must work zero hours if shift is zero
-          // otherwise must work over 20
-          cp.add(
-            cp.ifThenElse(
-              cp.eq(assignments[day][employee], 0), 
-              cp.eq(hoursWorked[day][employee], 0), 
-              cp.neq(hoursWorked[day][employee], 0)
+          // otherwise must work over 4 and under 8
+          cp.add(cp.or(
+              cp.and(
+                      cp.eq(assignments[day][employee], 0),
+                      cp.eq(hoursWorked[day][employee], 0)
+              ),
+              cp.and(
+                cp.ge(hoursWorked[day][employee], minConsecutiveWork),
+                cp.le(hoursWorked[day][employee], maxDailyWork)
+              )
             )
           );
         }
       }
 
-//      // hours worked cannot exceed the standard 40-hours per week and it should not be less than 20-hours per week
-//      for (int week = 0; week < numWeeks; week++){
-//        for (int employee = 0; employee < numEmployees; employee++) {
-//          IloIntExpr[] hoursWorkedThisWeek = new IloIntExpr[7];
-//          for (int day = 0; day < hoursWorkedThisWeek.length; day++) {
-//            hoursWorkedThisWeek[day] = hoursWorked[week * 7 + day][employee];
-//          }
-//          // must work less than 40
-//          cp.add(cp.le(cp.sum(hoursWorkedThisWeek), 40));
-//          // must work more than 20
-//          cp.add(cp.ge(cp.sum(hoursWorkedThisWeek), 20));
-//        }
-//      }
+      // hours worked cannot exceed the standard 40-hours per week and it should not be less than 20-hours per week
+      for (int week = 0; week < numWeeks; week++){
+        for (int employee = 0; employee < numEmployees; employee++) {
+          IloIntExpr[] hoursWorkedThisWeek = new IloIntExpr[7];
+          for (int day = 0; day < hoursWorkedThisWeek.length; day++) {
+            hoursWorkedThisWeek[day] = hoursWorked[week * 7 + day][employee];
+          }
+          // must work less than 40
+          cp.add(cp.le(cp.sum(hoursWorkedThisWeek), 40));
+          // must work more than 20
+          cp.add(cp.ge(cp.sum(hoursWorkedThisWeek), 20));
+        }
+      }
 //
 //      // It is known that night shifts are stressful, therefore night shifts cannot follow each other
 //      // max number of total night shifts per employee
