@@ -118,13 +118,12 @@ public class CPInstance
       // Uncomment this: to set the solver output level if you wish
       // cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
 
-
       // Assigned Shifts
       IloIntVar[][] assignments = new IloIntVar[numDays][numEmployees];
       for (int day = 0; day < numDays; day++) {
-        for (int shift = 0; shift < numEmployees; shift++) {
+        for (int employee = 0; employee < numEmployees; employee++) {
           // 4 possible shifts (0 to 3), each employee can only be assigned to a single shift
-          assignments[day][shift] = cp.intVar(0, numShifts - 1);
+          assignments[day][employee] = cp.intVar(0, numShifts - 1);
         }
       }
       
@@ -176,38 +175,38 @@ public class CPInstance
         }
       }
 
-      // hours worked cannot exceed the standard 40-hours per week and it should not be less than 20-hours per week
-      for (int week = 0; week < numWeeks; week++){
-        for (int employee = 0; employee < numEmployees; employee++) {
-          IloIntExpr[] hoursWorkedThisWeek = new IloIntExpr[7];
-          for (int day = 0; day < hoursWorkedThisWeek.length; day++) {
-            hoursWorkedThisWeek[day] = hoursWorked[week * 7 + day][employee];
-          }
-          // must work less than 40
-          cp.add(cp.le(cp.sum(hoursWorkedThisWeek), 40));
-          // must work more than 20
-          cp.add(cp.ge(cp.sum(hoursWorkedThisWeek), 20));
-        }
-      }
-      
-      // It is known that night shifts are stressful, therefore night shifts cannot follow each other
-      // max number of total night shifts per employee
-      for (int employee = 0; employee < numEmployees; employee++) {
-        IloIntExpr[] employeeShifts = new IloIntExpr[numDays];
-        for (int day = 0; day < numDays; day++) {
-          employeeShifts[day] = assignments[day][employee];
-        }
-        cp.add(cp.ge(cp.count(employeeShifts, 1), maxTotalNightShift));
-
-        for (int day = 0; day < numDays - maxConsecutiveNightShift; day++) {
-          IloIntExpr[] employeeConcecutiveShifts = new IloIntExpr[maxConsecutiveNightShift + 1];
-          for (int concec = 0; concec < maxConsecutiveNightShift + 1; concec++) {
-            employeeConcecutiveShifts[concec] = assignments[day + concec][employee];
-          }
-
-          cp.add(cp.le(cp.count(employeeConcecutiveShifts, 1), maxConsecutiveNightShift));
-        }
-      }
+//      // hours worked cannot exceed the standard 40-hours per week and it should not be less than 20-hours per week
+//      for (int week = 0; week < numWeeks; week++){
+//        for (int employee = 0; employee < numEmployees; employee++) {
+//          IloIntExpr[] hoursWorkedThisWeek = new IloIntExpr[7];
+//          for (int day = 0; day < hoursWorkedThisWeek.length; day++) {
+//            hoursWorkedThisWeek[day] = hoursWorked[week * 7 + day][employee];
+//          }
+//          // must work less than 40
+//          cp.add(cp.le(cp.sum(hoursWorkedThisWeek), 40));
+//          // must work more than 20
+//          cp.add(cp.ge(cp.sum(hoursWorkedThisWeek), 20));
+//        }
+//      }
+//
+//      // It is known that night shifts are stressful, therefore night shifts cannot follow each other
+//      // max number of total night shifts per employee
+//      for (int employee = 0; employee < numEmployees; employee++) {
+//        IloIntExpr[] employeeShifts = new IloIntExpr[numDays];
+//        for (int day = 0; day < numDays; day++) {
+//          employeeShifts[day] = assignments[day][employee];
+//        }
+//        cp.add(cp.ge(cp.count(employeeShifts, 1), maxTotalNightShift));
+//
+//        for (int day = 0; day < numDays - maxConsecutiveNightShift; day++) {
+//          IloIntExpr[] employeeConcecutiveShifts = new IloIntExpr[maxConsecutiveNightShift + 1];
+//          for (int concec = 0; concec < maxConsecutiveNightShift + 1; concec++) {
+//            employeeConcecutiveShifts[concec] = assignments[day + concec][employee];
+//          }
+//
+//          cp.add(cp.le(cp.count(employeeConcecutiveShifts, 1), maxConsecutiveNightShift));
+//        }
+//      }
       
       
       
