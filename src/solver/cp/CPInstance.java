@@ -129,8 +129,8 @@ public class CPInstance
 
   public void useLargestImpact(IloCP cp) throws IloException {
     IloVarSelector[] varSel = new IloVarSelector[3];
-    varSel[0] = cp.selectLargest(cp.varImpact());
-    varSel[1] = cp.selectSmallest(cp.domainSize());
+    varSel[0] = cp.selectSmallest(cp.domainSize());
+    varSel[1] = cp.selectLargest(cp.varImpact());
     varSel[2] = cp.selectRandomVar();
     IloIntVarChooser varChooser = cp.intVarChooser(varSel);
 
