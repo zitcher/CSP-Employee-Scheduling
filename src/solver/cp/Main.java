@@ -12,15 +12,15 @@ public class Main
 {  
   public static void main(String[] args) throws FileNotFoundException, IOException, IloException
   {
-//	if(args.length == 0)
-//	{
-//		System.out.println("Usage: java Main <file>");
-//		return;
-//	}
-//
-//   	String input = args[0];
+	if(args.length == 0)
+	{
+		System.out.println("Usage: java Main <file>");
+		return;
+	}
 
-	String input = "C:\\Users\\zacha\\Desktop\\Code\\CSP-Employee-Scheduling\\input\\28_65.sched";
+   	String input = args[0];
+
+	//String input = "C:\\Users\\zacha\\Desktop\\Code\\CSP-Employee-Scheduling\\input\\21_30.sched";
 	Path path = Paths.get(input);
 	String filename = path.getFileName().toString();
 	System.out.println("Instance: " + input);

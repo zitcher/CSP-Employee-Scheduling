@@ -124,7 +124,7 @@ public class CPInstance
       // cp.setParameter(IloCP.IntParam.SearchType, IloCP.ParameterValues.DepthFirst);   
   
       // Uncomment this: to set the solver output level if you wish
-      // cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
+      cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
 
       // Assigned Shifts
       IloIntVar[][] assignments = new IloIntVar[numDays][numEmployees];
@@ -280,20 +280,20 @@ public class CPInstance
           }
         }
 
-        for (int employee = 0; employee < numEmployees; employee++) {
-          System.out.print("E"+(employee+1)+": ");
-          System.out.print(Arrays.toString(solvedHours[employee]));
-          System.out.print(", ");
-          System.out.println(Arrays.toString(solvedAssignments[employee]));
-        }
-        for (int day = 0; day < numDays; day++) {
-          System.out.print(Arrays.toString(minDemandDayShift[day]));
-          System.out.print(" ");
-        }
-        System.out.println("");
-
-//         Uncomment this: for poor man's Gantt Chart to display schedules
-        prettyPrint(numEmployees, numDays, beginED, endED);
+//        for (int employee = 0; employee < numEmployees; employee++) {
+//          System.out.print("E"+(employee+1)+": ");
+//          System.out.print(Arrays.toString(solvedHours[employee]));
+//          System.out.print(", ");
+//          System.out.println(Arrays.toString(solvedAssignments[employee]));
+//        }
+//        for (int day = 0; day < numDays; day++) {
+//          System.out.print(Arrays.toString(minDemandDayShift[day]));
+//          System.out.print(" ");
+//        }
+//        System.out.println("");
+//
+////         Uncomment this: for poor man's Gantt Chart to display schedules
+//        prettyPrint(numEmployees, numDays, beginED, endED);
 
       }
       else
