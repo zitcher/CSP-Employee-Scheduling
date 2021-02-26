@@ -127,15 +127,15 @@ public class CPInstance
     cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
   }
 
-  public void useSmallestImpact(IloCP cp) throws IloException {
-    IloVarSelector[] varSel = new IloVarSelector[2];
-    varSel[0] = cp.selectSmallest(cp.varSuccessRate());
-    varSel[1] = cp.selectRandomVar();
+  public void useLargestImpact(IloCP cp) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[3];
+    varSel[0] = cp.selectLargest(cp.varImpact());
+    varSel[1] = cp.selectSmallest(cp.domainSize());
+    varSel[2] = cp.selectRandomVar();
     IloIntVarChooser varChooser = cp.intVarChooser(varSel);
 
-    IloValueSelector[] valSel = new IloValueSelector[2];
-    valSel[0] = cp.selectSmallest(cp.valueSuccessRate());
-    valSel[1] = cp.selectRandomValue();
+    IloValueSelector[] valSel = new IloValueSelector[1];
+    valSel[0] = cp.selectRandomValue();
     IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
 
     cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
@@ -155,8 +155,8 @@ public class CPInstance
   
       // Uncomment this: to set the solver output level if you wish
       cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
-
-      useSmallestImpact(cp);
+      cp.setParameter(IloCP.IntParam.RandomSeed, 6586);
+      useLargestImpact(cp);
 
       // Assigned Shifts
       IloIntVar[][] assignments = new IloIntVar[numDays][numEmployees];
@@ -170,13 +170,22 @@ public class CPInstance
       // there is a certain minimum demand that needs to be met on the number of employees needed every day for every shift
       // minDemandDayShift[day][shift]
       for (int day = 0; day < numDays; day++) {
-        IloIntExpr[] values = new IloIntExpr[numShifts];
         for (int shift = 0; shift < numShifts; shift++) {
-          values[shift] = cp.intVar(minDemandDayShift[day][shift], numEmployees);
+          int demand = minDemandDayShift[day][shift];
+          cp.add(cp.ge(cp.count(assignments[day], shift), demand));
         }
-        int[] counts = new int[]{0, 1, 2, 3};
-        cp.add(cp.distribute(values, counts, assignments[day]));
       }
+
+      // for some reason this works on windows but throws a huge error in the cslab, so guess we can't us card to speed up
+      // minDemandDayShift
+//      for (int day = 0; day < numDays; day++) {
+//        IloIntExpr[] values = new IloIntExpr[numShifts];
+//        for (int shift = 0; shift < numShifts; shift++) {
+//          values[shift] = cp.intVar(minDemandDayShift[day][shift], numEmployees);
+//        }
+//        int[] counts = new int[]{0, 1, 2, 3};
+//        cp.add(cp.distribute(values, counts, assignments[day]));
+//      }
 
       // the first 4 days of the schedule is treated specially where employees are assigned to unique shifts.
       for (int employee = 0; employee < numEmployees; employee++) {
