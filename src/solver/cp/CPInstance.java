@@ -113,6 +113,34 @@ public class CPInstance
   public String getResult() {
     return this.result;
   }
+
+  public void useSmallestDomain(IloCP cp) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[2];
+    varSel[0] = cp.selectSmallest(cp.domainSize());
+    varSel[1] = cp.selectRandomVar();
+    IloIntVarChooser varChooser = cp.intVarChooser(varSel);
+
+    IloValueSelector[] valSel = new IloValueSelector[1];
+    valSel[0] = cp.selectRandomValue();
+    IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
+
+    cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
+  }
+
+  public void useSmallestImpact(IloCP cp) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[2];
+    varSel[0] = cp.selectSmallest(cp.varSuccessRate());
+    varSel[1] = cp.selectRandomVar();
+    IloIntVarChooser varChooser = cp.intVarChooser(varSel);
+
+    IloValueSelector[] valSel = new IloValueSelector[2];
+    valSel[0] = cp.selectSmallest(cp.valueSuccessRate());
+    valSel[1] = cp.selectRandomValue();
+    IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
+
+    cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
+  }
+
   public void solve()
   {
     try
@@ -121,10 +149,14 @@ public class CPInstance
       // Important: Do not change! Keep these parameters as is
       cp.setParameter(IloCP.IntParam.Workers, 1);
       cp.setParameter(IloCP.DoubleParam.TimeLimit, 300);
-      // cp.setParameter(IloCP.IntParam.SearchType, IloCP.ParameterValues.DepthFirst);   
+      cp.setParameter(IloCP.IntParam.SearchType, IloCP.ParameterValues.DepthFirst);
+
+      // minimum domain size search
   
       // Uncomment this: to set the solver output level if you wish
       cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
+
+      useSmallestImpact(cp);
 
       // Assigned Shifts
       IloIntVar[][] assignments = new IloIntVar[numDays][numEmployees];
@@ -137,13 +169,6 @@ public class CPInstance
       
       // there is a certain minimum demand that needs to be met on the number of employees needed every day for every shift
       // minDemandDayShift[day][shift]
-//      for (int day = 0; day < numDays; day++) {
-//        for (int shift = 0; shift < numShifts; shift++) {
-//          int demand = minDemandDayShift[day][shift];
-//          cp.add(cp.ge(cp.count(assignments[day], shift), demand));
-//        }
-//      }
-
       for (int day = 0; day < numDays; day++) {
         IloIntExpr[] values = new IloIntExpr[numShifts];
         for (int shift = 0; shift < numShifts; shift++) {
@@ -237,9 +262,6 @@ public class CPInstance
       
       if(cp.solve())
       {
-        cp.printInformation();
-
-
         // beginED int[e][d] the hour employee e begins work on day d, -1 if not working
         // endED   int[e][d] the hour employee e ends work on day d, -1 if not working
         int[][] beginED = new int[numEmployees][numDays];
@@ -289,20 +311,21 @@ public class CPInstance
           }
         }
 
-        for (int employee = 0; employee < numEmployees; employee++) {
-          System.out.print("E"+(employee+1)+": ");
-          System.out.print(Arrays.toString(solvedHours[employee]));
-          System.out.print(", ");
-          System.out.println(Arrays.toString(solvedAssignments[employee]));
-        }
-        for (int day = 0; day < numDays; day++) {
-          System.out.print(Arrays.toString(minDemandDayShift[day]));
-          System.out.print(" ");
-        }
-        System.out.println("");
-
-//         Uncomment this: for poor man's Gantt Chart to display schedules
-        prettyPrint(numEmployees, numDays, beginED, endED);
+//        cp.printInformation();
+//        for (int employee = 0; employee < numEmployees; employee++) {
+//          System.out.print("E"+(employee+1)+": ");
+//          System.out.print(Arrays.toString(solvedHours[employee]));
+//          System.out.print(", ");
+//          System.out.println(Arrays.toString(solvedAssignments[employee]));
+//        }
+//        for (int day = 0; day < numDays; day++) {
+//          System.out.print(Arrays.toString(minDemandDayShift[day]));
+//          System.out.print(" ");
+//        }
+//        System.out.println("");
+//
+////         Uncomment this: for poor man's Gantt Chart to display schedules
+//        prettyPrint(numEmployees, numDays, beginED, endED);
 
       }
       else

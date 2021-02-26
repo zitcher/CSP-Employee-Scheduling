@@ -11,15 +11,15 @@ import java.nio.file.Paths;
 public class Main
 {  
   public static void main(String[] args) throws FileNotFoundException, IOException, IloException {
-		// if(args.length == 0)
-			//	{
-			//		System.out.println("Usage: java Main <file>");
-			//		return;
-			//	}
-			//
-			//	String input = args[0];
-			//
-				String input = "C:\\Users\\zacha\\Desktop\\Code\\CSP-Employee-Scheduling\\input\\21_30.sched";
+		 if(args.length == 0)
+				{
+					System.out.println("Usage: java Main <file>");
+					return;
+				}
+
+				String input = args[0];
+
+//				String input = "C:\\Users\\zacha\\Desktop\\Code\\CSP-Employee-Scheduling\\input\\14_14.sched";
 				Path path = Paths.get(input);
 				String filename = path.getFileName().toString();
 				System.out.println("Instance: " + input);
