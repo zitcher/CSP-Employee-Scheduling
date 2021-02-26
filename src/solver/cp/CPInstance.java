@@ -138,7 +138,7 @@ public class CPInstance
       // there is a certain minimum demand that needs to be met on the number of employees needed every day for every shift
       // minDemandDayShift[day][shift]
       for (int day = 0; day < numDays; day++) {
-        for (int shift = 0; shift < numShifts - 1; shift++) {
+        for (int shift = 0; shift < numShifts; shift++) {
           int demand = minDemandDayShift[day][shift];
           cp.add(cp.ge(cp.count(assignments[day], shift), demand));
         }
@@ -211,14 +211,15 @@ public class CPInstance
         for (int day = 0; day < numDays; day++) {
           employeeShifts[day] = assignments[day][employee];
         }
-        cp.add(cp.ge(cp.count(employeeShifts, 1), maxTotalNightShift));
+        // must work under max night shifts
+        cp.add(cp.le(cp.count(employeeShifts, 1), maxTotalNightShift));
 
         for (int day = 0; day < numDays - maxConsecutiveNightShift; day++) {
           IloIntExpr[] employeeConcecutiveShifts = new IloIntExpr[maxConsecutiveNightShift + 1];
           for (int concec = 0; concec < maxConsecutiveNightShift + 1; concec++) {
             employeeConcecutiveShifts[concec] = assignments[day + concec][employee];
           }
-
+          // can't have too many concecutive shifts
           cp.add(cp.le(cp.count(employeeConcecutiveShifts, 1), maxConsecutiveNightShift));
         }
       }
@@ -285,6 +286,12 @@ public class CPInstance
           System.out.print(", ");
           System.out.println(Arrays.toString(solvedAssignments[employee]));
         }
+        for (int day = 0; day < numDays; day++) {
+          System.out.print(Arrays.toString(minDemandDayShift[day]));
+          System.out.print(" ");
+        }
+        System.out.println("");
+
 //         Uncomment this: for poor man's Gantt Chart to display schedules
         prettyPrint(numEmployees, numDays, beginED, endED);
 

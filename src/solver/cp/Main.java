@@ -20,7 +20,7 @@ public class Main
 //
 //   	String input = args[0];
 
-	String input = "C:\\Users\\zacha\\Desktop\\Code\\CSP-Employee-Scheduling\\input\\7_14.sched";
+	String input = "C:\\Users\\zacha\\Desktop\\Code\\CSP-Employee-Scheduling\\input\\28_65.sched";
 	Path path = Paths.get(input);
 	String filename = path.getFileName().toString();
 	System.out.println("Instance: " + input);
