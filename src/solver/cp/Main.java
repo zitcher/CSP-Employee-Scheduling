@@ -10,59 +10,58 @@ import java.nio.file.Paths;
 
 public class Main
 {  
-  public static void main(String[] args) throws FileNotFoundException, IOException, IloException
-  {
-	if(args.length == 0)
-	{
-		System.out.println("Usage: java Main <file>");
-		return;
-	}
+  public static void main(String[] args) throws FileNotFoundException, IOException, IloException {
+		// if(args.length == 0)
+			//	{
+			//		System.out.println("Usage: java Main <file>");
+			//		return;
+			//	}
+			//
+			//	String input = args[0];
+			//
+				String input = "C:\\Users\\zacha\\Desktop\\Code\\CSP-Employee-Scheduling\\input\\21_30.sched";
+				Path path = Paths.get(input);
+				String filename = path.getFileName().toString();
+				System.out.println("Instance: " + input);
 
-   	String input = args[0];
+				Timer watch = new Timer();
+				watch.start();
+				CPInstance instance = new CPInstance(input);
+				instance.solve();
+				watch.stop();
 
-	//String input = "C:\\Users\\zacha\\Desktop\\Code\\CSP-Employee-Scheduling\\input\\21_30.sched";
-	Path path = Paths.get(input);
-	String filename = path.getFileName().toString();
-	System.out.println("Instance: " + input);
-     
-	Timer watch = new Timer();
-	watch.start();
-	CPInstance instance = new CPInstance(input);
-	instance.solve();
-	watch.stop();
-
-	System.out.println("Instance: " + filename + 
-					   " Time: " + String.format("%.2f",watch.getTime()) +
-					   " Result: " + instance.cp.getInfo(IloCP.IntInfo.NumberOfFails) +
-							" Solution: " + instance.getResult());
-					   
-    // Timer watch = new Timer();
-    // watch.start();
-    // CPInstance instance = new CPInstance(input);
-    // instance.solveAustraliaBinary();
-    // watch.stop();
-     
-    // // OUTPUT FORMAT
-    // System.out.println("Instance: " + "Binary" + 
-                       // " Time: " + String.format("%.2f",watch.getTime()) +
-                       // " Result: " + instance.cp.getInfo(IloCP.IntInfo.NumberOfFails));
- 
-    // watch.start();
-    // instance.solveAustraliaGlobal();
-    // watch.stop();
-     
-    // // OUTPUT FORMAT
-    // System.out.println("Instance: " + "Global" + 
-                       // " Time: " + String.format("%.2f",watch.getTime()) +
-                       // " Result: " + instance.cp.getInfo(IloCP.IntInfo.NumberOfFails));
-
-    // watch.start();
-    // instance.solveSendMoreMoney();
-    // watch.stop();
-     
-    // // OUTPUT FORMAT
-    // System.out.println("Instance: " + "SMM" + 
-                       // " Time: " + String.format("%.2f",watch.getTime()) +
-                       // " Result: " + instance.cp.getInfo(IloCP.IntInfo.NumberOfFails));
+				System.out.println("Instance: " + filename +
+								   " Time: " + String.format("%.2f",watch.getTime()) +
+								   " Result: " + instance.cp.getInfo(IloCP.IntInfo.NumberOfFails) +
+										" Solution: " + instance.getResult());
+			//
+			//    // Timer watch = new Timer();
+			//    // watch.start();
+			//    // CPInstance instance = new CPInstance(input);
+			//    // instance.solveAustraliaBinary();
+			//    // watch.stop();
+			//
+			//    // // OUTPUT FORMAT
+			//    // System.out.println("Instance: " + "Binary" +
+			//                       // " Time: " + String.format("%.2f",watch.getTime()) +
+			//                       // " Result: " + instance.cp.getInfo(IloCP.IntInfo.NumberOfFails));
+			//
+			//    // watch.start();
+			//    // instance.solveAustraliaGlobal();
+			//    // watch.stop();
+			//
+			//    // // OUTPUT FORMAT
+			//    // System.out.println("Instance: " + "Global" +
+			//                       // " Time: " + String.format("%.2f",watch.getTime()) +
+			//                       // " Result: " + instance.cp.getInfo(IloCP.IntInfo.NumberOfFails));
+			//
+			//    // watch.start();
+			//    // instance.solveSendMoreMoney();
+			//    // watch.stop();
+			//
+			//    // // OUTPUT FORMAT
+			//    // System.out.println("Instance: " + "SMM" +
+			//                       // " Time: " + String.format("%.2f",watch.getTime()) +
+			//                       // " Result: " + instance.cp.getInfo(IloCP.IntInfo.NumberOfFails));
   }
 }
