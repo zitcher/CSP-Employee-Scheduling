@@ -31,10 +31,10 @@ public class Main
 	instance.solve();
 	watch.stop();
 
-	System.out.println("Instance: " + filename + 
+	System.out.println(" Instance: " + filename +
 					   " Time: " + String.format("%.2f",watch.getTime()) +
 					   " Result: " + instance.cp.getInfo(IloCP.IntInfo.NumberOfFails) +
-							" Solution: " + instance.getResult());
+			           " Solution: " + instance.getResult());
 					   
     // Timer watch = new Timer();
     // watch.start();

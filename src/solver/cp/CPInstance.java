@@ -113,21 +113,83 @@ public class CPInstance
   public String getResult() {
     return this.result;
   }
+
+  public void useSearchPhaseSmallestDomain(IloCP cp) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[2];
+    varSel[0] = cp.selectSmallest(cp.domainSize());
+    varSel[1] = cp.selectRandomVar();
+    IloIntVarChooser varChooser = cp.intVarChooser(varSel);
+
+    IloValueSelector[] valSel = new IloValueSelector[1];
+    valSel[0] = cp.selectRandomValue();
+    IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
+
+    //return cp.searchPhase(varChooser, valueChooser);
+    cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
+  }
+
+  public void useSearchPhaseLargestImpact(IloCP cp) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[3];
+    varSel[0] = cp.selectSmallest(cp.domainSize());
+    varSel[1] = cp.selectLargest(cp.varImpact());
+    varSel[2] = cp.selectRandomVar();
+    IloIntVarChooser varChooser = cp.intVarChooser(varSel);
+
+    IloValueSelector[] valSel = new IloValueSelector[1];
+    valSel[0] = cp.selectRandomValue();
+    IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
+
+    //return cp.searchPhase(varChooser, valueChooser);
+    cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
+  }
+
+  public IloSearchPhase getSearchPhaseSmallestDomain(IloCP cp) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[2];
+    varSel[0] = cp.selectSmallest(cp.domainSize());
+    varSel[1] = cp.selectRandomVar();
+    IloIntVarChooser varChooser = cp.intVarChooser(varSel);
+
+    IloValueSelector[] valSel = new IloValueSelector[1];
+    valSel[0] = cp.selectRandomValue();
+    IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
+
+    return cp.searchPhase(varChooser, valueChooser);
+    //cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
+  }
+
+  public IloSearchPhase getSearchPhaseLargestImpact(IloCP cp) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[3];
+    varSel[0] = cp.selectSmallest(cp.domainSize());
+    varSel[1] = cp.selectLargest(cp.varImpact());
+    varSel[2] = cp.selectRandomVar();
+    IloIntVarChooser varChooser = cp.intVarChooser(varSel);
+
+    IloValueSelector[] valSel = new IloValueSelector[1];
+    valSel[0] = cp.selectRandomValue();
+    IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
+
+    return cp.searchPhase(varChooser, valueChooser);
+    //cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
+  }
+
   public void solve()
   {
     try
     {
-      cp = new IloCP();        
+
+      cp = new IloCP();
       // Important: Do not change! Keep these parameters as is
       cp.setParameter(IloCP.IntParam.Workers, 1);
       cp.setParameter(IloCP.DoubleParam.TimeLimit, 300);
-      // cp.setParameter(IloCP.IntParam.SearchType, IloCP.ParameterValues.DepthFirst);   
+      cp.setParameter(IloCP.IntParam.SearchType, IloCP.ParameterValues.DepthFirst);
   
       // Uncomment this: to set the solver output level if you wish
       cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
 
-      // Assigned Shifts
+      // assigned shifts & hours
       IloIntVar[][] assignments = new IloIntVar[numDays][numEmployees];
+      IloIntVar[][] hoursWorked = new IloIntVar[numDays][numEmployees];
+
       for (int day = 0; day < numDays; day++) {
         for (int employee = 0; employee < numEmployees; employee++) {
           // 4 possible shifts (0 to 3), each employee can only be assigned to a single shift
@@ -136,7 +198,6 @@ public class CPInstance
       }
       
       // there is a certain minimum demand that needs to be met on the number of employees needed every day for every shift
-      // minDemandDayShift[day][shift]
       for (int day = 0; day < numDays; day++) {
         for (int shift = 0; shift < numShifts; shift++) {
           int demand = minDemandDayShift[day][shift];
@@ -161,11 +222,14 @@ public class CPInstance
         cp.add(cp.ge(cp.sum(clique), 6));
         cp.add(cp.eq(cp.sum(clique), 6));
       }
-      
-      int[] workableHours = new int[]{0, 4, 5, 6, 7, 8};
+
+      int[] workableHours = new int[1 + maxDailyWork-minConsecutiveWork+1];
+      workableHours[0] = 0;
+      for(int h = 0; h < maxDailyWork-minConsecutiveWork+1; h++){
+        workableHours[h+1] = minConsecutiveWork + h;
+      }
 
       // Employees cannot work more than 8 hours per day and less than 4 hours per day
-      IloIntVar[][] hoursWorked = new IloIntVar[numDays][numEmployees];
       for (int day = 0; day < numDays; day++) {
         for (int employee = 0; employee < numEmployees; employee++) {
           // must work either 0 or 20-40 hours
@@ -174,19 +238,15 @@ public class CPInstance
           // must work zero hours if shift is zero
           // otherwise must work over 4 and under 8
           cp.add(cp.or(
-              cp.and(
-                      cp.eq(assignments[day][employee], 0),
-                      cp.eq(hoursWorked[day][employee], 0)
-              ),
-              cp.and(
-                cp.and(
-                  cp.ge(hoursWorked[day][employee], minConsecutiveWork),
-                  cp.le(hoursWorked[day][employee], maxDailyWork)
-                ),
-                cp.neq(assignments[day][employee], 0)
-              )
-            )
-          );
+                  cp.and(
+                          cp.eq(assignments[day][employee], 0),
+                          cp.eq(hoursWorked[day][employee], 0)
+                  ),
+                  cp.and(
+                          cp.neq(hoursWorked[day][employee], 0),
+                          cp.neq(assignments[day][employee], 0)
+                  )
+                  ));
         }
       }
 
@@ -223,13 +283,19 @@ public class CPInstance
           cp.add(cp.le(cp.count(employeeConcecutiveShifts, 1), maxConsecutiveNightShift));
         }
       }
-      
-      
-      
+
+      //construct search phases for different var groups
+//      IloSearchPhase[] phases = new IloSearchPhase[1];
+//      phases[0] = useLargestImpact(cp);
+//      for(int i = 0; i<phases.length; ++i){
+//        cp.setSearchPhases(phases[i]);
+//      }
+
+      useSearchPhaseLargestImpact(cp);
+
       if(cp.solve())
       {
         cp.printInformation();
-
 
         // beginED int[e][d] the hour employee e begins work on day d, -1 if not working
         // endED   int[e][d] the hour employee e ends work on day d, -1 if not working
@@ -409,7 +475,7 @@ public class CPInstance
          System.out.println( "NorthernTerritory:   " + Colors[(int)cp.getValue(NorthernTerritory)]);
          System.out.println( "SouthAustralia:      " + Colors[(int)cp.getValue(SouthAustralia)]);
          System.out.println( "Queensland:          " + Colors[(int)cp.getValue(Queensland)]);
-         System.out.println( "NewSouthWales:       " + Colors[(int)cp.getValue(NewSouthWales)]);
+         System.out.println( "NewSout hWales:       " + Colors[(int)cp.getValue(NewSouthWales)]);
          System.out.println( "Victoria:            " + Colors[(int)cp.getValue(Victoria)]);
       }
       else
