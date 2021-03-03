@@ -114,6 +114,17 @@ public class CPInstance
     return this.result;
   }
 
+  public IloIntVar[] flatten(IloIntVar[][] x){
+    IloIntVar[] x_flat = new IloIntVar[x[0].length * x.length];
+    int index = 0;
+    for(int i = 0; i < x.length; i++){
+      for(int j = 0; j < x[0].length; j++){
+        x_flat[index++] = x[i][j];
+      }
+    }
+    return x_flat;
+  }
+
   public void useSearchPhaseSmallestDomain(IloCP cp) throws IloException {
     IloVarSelector[] varSel = new IloVarSelector[2];
     varSel[0] = cp.selectSmallest(cp.domainSize());
@@ -157,7 +168,9 @@ public class CPInstance
     //cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
   }
 
-  public IloSearchPhase getSearchPhaseLargestImpact(IloCP cp) throws IloException {
+  public IloSearchPhase getSearchPhaseLargestImpact(IloCP cp, IloIntVar[][] vars) throws IloException {
+    IloIntVar[] flat_vars = flatten(vars);
+
     IloVarSelector[] varSel = new IloVarSelector[3];
     varSel[0] = cp.selectSmallest(cp.domainSize());
     varSel[1] = cp.selectLargest(cp.varImpact());
@@ -168,7 +181,7 @@ public class CPInstance
     valSel[0] = cp.selectRandomValue();
     IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
 
-    return cp.searchPhase(varChooser, valueChooser);
+    return cp.searchPhase(flat_vars, varChooser, valueChooser);
     //cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
   }
 
@@ -285,12 +298,13 @@ public class CPInstance
       }
 
       //construct search phases for different var groups
-//      IloSearchPhase[] phases = new IloSearchPhase[1];
-//      phases[0] = useLargestImpact(cp);
-//      for(int i = 0; i<phases.length; ++i){
-//        cp.setSearchPhases(phases[i]);
-//      }
-      useSearchPhaseLargestImpact(cp);
+      IloSearchPhase[] phases = new IloSearchPhase[2];
+      phases[0] = getSearchPhaseLargestImpact(cp, assignments);
+      phases[1] = getSearchPhaseLargestImpact(cp, hoursWorked);
+      for(int i = 0; i<phases.length; ++i){
+        cp.setSearchPhases(phases[i]);
+      }
+      //useSearchPhaseLargestImpact(cp);
 
       if(cp.solve())
       {
