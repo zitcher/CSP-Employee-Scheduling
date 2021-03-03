@@ -11,29 +11,27 @@ import java.nio.file.Paths;
 public class Main
 {  
   public static void main(String[] args) throws FileNotFoundException, IOException, IloException {
-		// if(args.length == 0)
-			//	{
-			//		System.out.println("Usage: java Main <file>");
-			//		return;
-			//	}
-			//
-			//	String input = args[0];
-			//
-				String input = "C:\\Users\\zacha\\Desktop\\Code\\CSP-Employee-Scheduling\\input\\14_14.sched";
-				Path path = Paths.get(input);
-				String filename = path.getFileName().toString();
-				System.out.println("Instance: " + input);
+		if(args.length == 0) {
+			System.out.println("Usage: java Main <file>");
+			return;
+		}
 
-				Timer watch = new Timer();
-				watch.start();
-				CPInstance instance = new CPInstance(input);
-				instance.solve();
-				watch.stop();
+		String input = args[0];
 
-				System.out.println("Instance: " + filename +
-								   " Time: " + String.format("%.2f",watch.getTime()) +
-								   " Result: " + instance.cp.getInfo(IloCP.IntInfo.NumberOfFails) +
-										" Solution: " + instance.getResult());
+		Path path = Paths.get(input);
+		String filename = path.getFileName().toString();
+		System.out.println("Instance: " + input);
+
+		Timer watch = new Timer();
+		watch.start();
+		CPInstance instance = new CPInstance(input);
+		instance.solve();
+		watch.stop();
+
+		System.out.println("Instance: " + filename +
+				" Time: " + String.format("%.2f",watch.getTime()) +
+				" Result: " + instance.cp.getInfo(IloCP.IntInfo.NumberOfFails) +
+				" Solution: " + instance.getResult());
 			//
 			//    // Timer watch = new Timer();
 			//    // watch.start();

@@ -115,37 +115,40 @@ public class CPInstance
   }
 
   public void useSmallestDomain(IloCP cp) throws IloException {
-    IloVarSelector[] varSel = new IloVarSelector[2];
+    IloVarSelector[] varSel = new IloVarSelector[1];
     varSel[0] = cp.selectSmallest(cp.domainSize());
-    varSel[1] = cp.selectRandomVar();
     IloIntVarChooser varChooser = cp.intVarChooser(varSel);
 
     IloValueSelector[] valSel = new IloValueSelector[1];
-    valSel[0] = cp.selectRandomValue();
+    valSel[0] =  cp.selectLargest(cp.valueSuccessRate());
     IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
 
     cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
   }
 
-  public void useLargestImpact(IloCP cp) throws IloException {
-    IloVarSelector[] varSel = new IloVarSelector[3];
+  // works very well on non 21s
+  public IloSearchPhase[] useLargestImpact(IloCP cp) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[2];
     varSel[0] = cp.selectSmallest(cp.domainSize());
-    varSel[1] = cp.selectLargest(cp.varImpact());
-    varSel[2] = cp.selectRandomVar();
+    varSel[1] = cp.selectRandomVar();
     IloIntVarChooser varChooser = cp.intVarChooser(varSel);
 
-    IloValueSelector[] valSel = new IloValueSelector[1];
-    valSel[0] = cp.selectRandomValue();
+    IloValueSelector[] valSel = new IloValueSelector[2];
+    valSel[0] = cp.selectLargest(cp.valueImpact());
+    valSel[1] = cp.selectRandomValue();
     IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
 
-    cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
+    IloSearchPhase[] phases = new IloSearchPhase[1];
+    phases[0] = cp.searchPhase(varChooser, valueChooser);
+
+    return phases;
   }
 
   public void solve()
   {
     try
     {
-      cp = new IloCP();        
+      cp = new IloCP();
       // Important: Do not change! Keep these parameters as is
       cp.setParameter(IloCP.IntParam.Workers, 1);
       cp.setParameter(IloCP.DoubleParam.TimeLimit, 300);
@@ -154,9 +157,9 @@ public class CPInstance
       // minimum domain size search
   
       // Uncomment this: to set the solver output level if you wish
-      cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
+      // cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
       cp.setParameter(IloCP.IntParam.RandomSeed, 6586);
-      useLargestImpact(cp);
+      IloSearchPhase[] phases = useLargestImpact(cp);
 
       // Assigned Shifts
       IloIntVar[][] assignments = new IloIntVar[numDays][numEmployees];
@@ -169,23 +172,25 @@ public class CPInstance
       
       // there is a certain minimum demand that needs to be met on the number of employees needed every day for every shift
       // minDemandDayShift[day][shift]
+//      for (int day = 0; day < numDays; day++) {
+//        for (int shift = 0; shift < numShifts; shift++) {
+//          int demand = minDemandDayShift[day][shift];
+//          cp.add(cp.ge(cp.count(assignments[day], shift), demand));
+//        }
+//      }
+
+      // same as commented out code above but using distribute
+      // minDemandDayShift
+      IloIntVar[][] mindDemands = new IloIntVar[numDays][numShifts];
+      int[] counts = new int[]{0, 1, 2, 3};
       for (int day = 0; day < numDays; day++) {
         for (int shift = 0; shift < numShifts; shift++) {
-          int demand = minDemandDayShift[day][shift];
-          cp.add(cp.ge(cp.count(assignments[day], shift), demand));
+          mindDemands[day][shift] = cp.intVar(minDemandDayShift[day][shift], numEmployees);
         }
       }
-
-      // for some reason this works on windows but throws a huge error in the cslab, so guess we can't us card to speed up
-      // minDemandDayShift
-//      for (int day = 0; day < numDays; day++) {
-//        IloIntExpr[] values = new IloIntExpr[numShifts];
-//        for (int shift = 0; shift < numShifts; shift++) {
-//          values[shift] = cp.intVar(minDemandDayShift[day][shift], numEmployees);
-//        }
-//        int[] counts = new int[]{0, 1, 2, 3};
-//        cp.add(cp.distribute(values, counts, assignments[day]));
-//      }
+      for (int day = 0; day < numDays; day++) {
+        cp.add(cp.distribute(mindDemands[day], counts, assignments[day]));
+      }
 
       // the first 4 days of the schedule is treated specially where employees are assigned to unique shifts.
       for (int employee = 0; employee < numEmployees; employee++) {
@@ -222,10 +227,7 @@ public class CPInstance
                       cp.eq(hoursWorked[day][employee], 0)
               ),
               cp.and(
-                cp.and(
-                  cp.ge(hoursWorked[day][employee], minConsecutiveWork),
-                  cp.le(hoursWorked[day][employee], maxDailyWork)
-                ),
+                cp.neq(hoursWorked[day][employee], 0),
                 cp.neq(assignments[day][employee], 0)
               )
             )
@@ -266,81 +268,92 @@ public class CPInstance
           cp.add(cp.le(cp.count(employeeConcecutiveShifts, 1), maxConsecutiveNightShift));
         }
       }
-      
-      
-      
-      if(cp.solve())
-      {
-        // beginED int[e][d] the hour employee e begins work on day d, -1 if not working
-        // endED   int[e][d] the hour employee e ends work on day d, -1 if not working
-        int[][] beginED = new int[numEmployees][numDays];
-        int[][] endED = new int[numEmployees][numDays];
 
-        int[][] solvedAssignments = new int[numEmployees][numDays];
-        for (int employee = 0; employee < numEmployees; employee++) {
-          for (int day = 0; day < numDays; day++) {
-            solvedAssignments[employee][day] = (int)cp.getValue(assignments[day][employee]);
-          }
-        }          
 
-        int[][] solvedHours = new int[numEmployees][numDays];
-        for (int employee = 0; employee < numEmployees; employee++) {
-          for (int day = 0; day < numDays; day++) {
-            solvedHours[employee][day] = (int)cp.getValue(hoursWorked[day][employee]);
-          }
-        }
+      double failLimit = 100;
+      double growth = 1.01;
+      int testNum = 0;
 
-        // Fill beginED and endED arrays
-        for (int employee = 0; employee < numEmployees; employee++) {
-          for (int day = 0; day < numDays; day++) {
-            if (solvedAssignments[employee][day] == 0) {
-              beginED[employee][day] = -1;
-              endED[employee][day] = -1;
-            } else if (solvedAssignments[employee][day] == 1) {
-              beginED[employee][day] = 0 ;
-              endED[employee][day] = 0 + solvedHours[employee][day];
-            } else if (solvedAssignments[employee][day] == 2) {
-              beginED[employee][day] = 8;
-              endED[employee][day] = 8 + solvedHours[employee][day];
-            } else if (solvedAssignments[employee][day] == 3) {
-              beginED[employee][day] = 16;
-              endED[employee][day] = 16 + solvedHours[employee][day];
+      cp.setParameter(IloCP.IntParam.SeedRandomOnSolve, 1);
+      cp.setParameter(IloCP.IntParam.FailLimit, (int) failLimit);
+      while(true) {
+        testNum++;
+        failLimit = failLimit * growth;
+        cp.setParameter(IloCP.IntParam.FailLimit, (int) failLimit);
+        cp.setParameter(IloCP.IntParam.RandomSeed, testNum);
+
+
+        if (cp.solve(phases)) {
+          // beginED int[e][d] the hour employee e begins work on day d, -1 if not working
+          // endED   int[e][d] the hour employee e ends work on day d, -1 if not working
+          int[][] beginED = new int[numEmployees][numDays];
+          int[][] endED = new int[numEmployees][numDays];
+
+          int[][] solvedAssignments = new int[numEmployees][numDays];
+          for (int employee = 0; employee < numEmployees; employee++) {
+            for (int day = 0; day < numDays; day++) {
+              solvedAssignments[employee][day] = (int) cp.getValue(assignments[day][employee]);
             }
           }
-        }
 
-        this.result = "";
-        for (int employee = 0; employee < numEmployees; employee++) {
-          for (int day = 0; day < numDays; day++) {
-            if (result.equals("")) {
-              result += beginED[employee][day] + " " + endED[employee][day];
-            } else {
-              result += " " + beginED[employee][day] + " " + endED[employee][day];
+          int[][] solvedHours = new int[numEmployees][numDays];
+          for (int employee = 0; employee < numEmployees; employee++) {
+            for (int day = 0; day < numDays; day++) {
+              solvedHours[employee][day] = (int) cp.getValue(hoursWorked[day][employee]);
             }
           }
+
+          // Fill beginED and endED arrays
+          for (int employee = 0; employee < numEmployees; employee++) {
+            for (int day = 0; day < numDays; day++) {
+              if (solvedAssignments[employee][day] == 0) {
+                beginED[employee][day] = -1;
+                endED[employee][day] = -1;
+              } else if (solvedAssignments[employee][day] == 1) {
+                beginED[employee][day] = 0;
+                endED[employee][day] = 0 + solvedHours[employee][day];
+              } else if (solvedAssignments[employee][day] == 2) {
+                beginED[employee][day] = 8;
+                endED[employee][day] = 8 + solvedHours[employee][day];
+              } else if (solvedAssignments[employee][day] == 3) {
+                beginED[employee][day] = 16;
+                endED[employee][day] = 16 + solvedHours[employee][day];
+              }
+            }
+          }
+
+          this.result = "";
+          for (int employee = 0; employee < numEmployees; employee++) {
+            for (int day = 0; day < numDays; day++) {
+              if (result.equals("")) {
+                result += beginED[employee][day] + " " + endED[employee][day];
+              } else {
+                result += " " + beginED[employee][day] + " " + endED[employee][day];
+              }
+            }
+          }
+
+          //        cp.printInformation();
+          //        for (int employee = 0; employee < numEmployees; employee++) {
+          //          System.out.print("E"+(employee+1)+": ");
+          //          System.out.print(Arrays.toString(solvedHours[employee]));
+          //          System.out.print(", ");
+          //          System.out.println(Arrays.toString(solvedAssignments[employee]));
+          //        }
+          //        for (int day = 0; day < numDays; day++) {
+          //          System.out.print(Arrays.toString(minDemandDayShift[day]));
+          //          System.out.print(" ");
+          //        }
+          //        System.out.println("");
+          //
+          ////         Uncomment this: for poor man's Gantt Chart to display schedules
+          //        prettyPrint(numEmployees, numDays, beginED, endED);
+          break;
+        } else if (testNum > 10000) {
+          System.out.println("No Solution found!");
+          System.out.println("Number of fails: " + cp.getInfo(IloCP.IntInfo.NumberOfFails));
+          break;
         }
-
-//        cp.printInformation();
-//        for (int employee = 0; employee < numEmployees; employee++) {
-//          System.out.print("E"+(employee+1)+": ");
-//          System.out.print(Arrays.toString(solvedHours[employee]));
-//          System.out.print(", ");
-//          System.out.println(Arrays.toString(solvedAssignments[employee]));
-//        }
-//        for (int day = 0; day < numDays; day++) {
-//          System.out.print(Arrays.toString(minDemandDayShift[day]));
-//          System.out.print(" ");
-//        }
-//        System.out.println("");
-//
-////         Uncomment this: for poor man's Gantt Chart to display schedules
-//        prettyPrint(numEmployees, numDays, beginED, endED);
-
-      }
-      else
-      {
-        System.out.println("No Solution found!");
-        System.out.println("Number of fails: " + cp.getInfo(IloCP.IntInfo.NumberOfFails));
       }
     }
     catch(IloException e)
