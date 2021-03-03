@@ -301,12 +301,12 @@ public class CPInstance
       IloSearchPhase[] phases = new IloSearchPhase[2];
       phases[0] = getSearchPhaseLargestImpact(cp, assignments);
       phases[1] = getSearchPhaseLargestImpact(cp, hoursWorked);
-      for(int i = 0; i<phases.length; ++i){
-        cp.setSearchPhases(phases[i]);
-      }
+      //for(int i = 0; i<phases.length; ++i){
+      //  cp.setSearchPhases(phases[i]);
+      //}
       //useSearchPhaseLargestImpact(cp);
 
-      if(cp.solve())
+      if(cp.solve(phases))
       {
         cp.printInformation();
 
