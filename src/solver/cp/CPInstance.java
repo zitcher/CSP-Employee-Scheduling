@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import java.util.Scanner;
+import java.util.Random;
 
 import java.util.Arrays;
 
@@ -114,7 +115,6 @@ public class CPInstance
     return this.result;
   }
 
-
   // works very well on non 28s
   public IloSearchPhase useSmallestDomain(IloCP cp, IloIntVar[] vars) throws IloException {
     IloVarSelector[] varSel = new IloVarSelector[2];
@@ -126,6 +126,75 @@ public class CPInstance
     valSel[0] = cp.selectLargest(cp.valueImpact());
     valSel[1] = cp.selectRandomValue();
     IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
+
+    return cp.searchPhase(vars, varChooser, valueChooser);
+  }
+
+  // works very well on non 28s
+  public IloSearchPhase useSmallestDomainHours(IloCP cp, IloIntVar[] vars) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[2];
+    varSel[0] = cp.selectSmallest(cp.domainSize());
+    varSel[1] = cp.selectRandomVar();
+    IloIntVarChooser varChooser = cp.intVarChooser(varSel);
+
+    IloValueSelector[] valSel = new IloValueSelector[2];
+    int[] workableHours = new int[]{0, 4, 5, 6, 7, 8};
+    int[] evals = new int[]{0, 3, 4, 4, 3, 2};
+    valSel[0] = cp.selectLargest(cp.explicitValueEval(
+      workableHours,
+      evals
+    ));
+    valSel[1] = cp.selectRandomValue();
+    IloIntValueChooser valueChooser = cp.intValueChooser(valSel);
+
+    return cp.searchPhase(vars, varChooser, valueChooser);
+  }
+
+  public IloSearchPhase useSmallestDomainShiftsRandom(IloCP cp, IloIntVar[] vars, Random random) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[2];
+    varSel[0] = cp.selectSmallest(cp.domainSize());
+    varSel[1] = cp.selectRandomVar();
+    IloIntVarChooser varChooser = cp.intVarChooser(varSel);
+
+    IloValueSelector[] valSel = new IloValueSelector[2];
+    int[] workableShifts = new int[numShifts];
+    for (int i = 0; i < workableShifts.length; i++) {
+      workableShifts[i] = i;
+    }
+    int[] evals = new int[numShifts];
+    for (int i = 0; i < evals.length; i++) {
+      evals[i] = (int) (((double) evals.length) * random.nextDouble());
+    }
+
+    valSel[0] = cp.selectLargest(cp.explicitValueEval(
+      workableShifts,
+      evals
+    ));
+    valSel[1] = cp.selectRandomValue();
+    IloIntValueChooser valueChooser = cp.intValueChooser(valSel);
+
+    return cp.searchPhase(vars, varChooser, valueChooser);
+  }
+
+  public IloSearchPhase useSmallestDomainHoursRandom(IloCP cp, IloIntVar[] vars, Random random) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[2];
+    varSel[0] = cp.selectSmallest(cp.domainSize());
+    varSel[1] = cp.selectRandomVar();
+    IloIntVarChooser varChooser = cp.intVarChooser(varSel);
+
+    IloValueSelector[] valSel = new IloValueSelector[2];
+    int[] workableHours = new int[]{0, 4, 5, 6, 7, 8};
+    int[] evals = new int[6];
+    for (int i = 0; i < evals.length; i++) {
+      evals[i] = (int) (((double) evals.length) * random.nextDouble());
+    }
+
+    valSel[0] = cp.selectLargest(cp.explicitValueEval(
+      workableHours,
+      evals
+    ));
+    valSel[1] = cp.selectRandomValue();
+    IloIntValueChooser valueChooser = cp.intValueChooser(valSel);
 
     return cp.searchPhase(vars, varChooser, valueChooser);
   }
@@ -167,7 +236,7 @@ public class CPInstance
       // minimum domain size search
   
       // Uncomment this: to set the solver output level if you wish
-      // cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
+      cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
       cp.setParameter(IloCP.IntParam.RandomSeed, 6586);
 
 
@@ -279,14 +348,7 @@ public class CPInstance
         }
       }
 
-
-      IloSearchPhase[] phases = new IloSearchPhase[3];
-      phases[0] = useSmallestDomain(cp, flatten(assignments));
-      phases[1] = useImpact(cp, flatten(mindDemands));
-      phases[2] = useImpact(cp, flatten(hoursWorked));
-
-
-      double failLimit = 100;
+      double failLimit = 1000;
       double growth = 1.01;
       int testNum = 0;
 
@@ -297,6 +359,12 @@ public class CPInstance
         failLimit = failLimit * growth;
         cp.setParameter(IloCP.IntParam.FailLimit, (int) failLimit);
         cp.setParameter(IloCP.IntParam.RandomSeed, testNum);
+
+        Random generator = new Random(testNum);
+        IloSearchPhase[] phases = new IloSearchPhase[3];
+        phases[0] = useSmallestDomainShiftsRandom(cp, flatten(assignments), generator);
+        phases[1] = useSmallestDomain(cp, flatten(mindDemands));
+        phases[2] = useSmallestDomainHoursRandom(cp, flatten(hoursWorked), generator);
 
 
         if (cp.solve(phases)) {
