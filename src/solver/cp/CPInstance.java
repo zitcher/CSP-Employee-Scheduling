@@ -114,20 +114,9 @@ public class CPInstance
     return this.result;
   }
 
-  public void useSmallestDomain(IloCP cp) throws IloException {
-    IloVarSelector[] varSel = new IloVarSelector[1];
-    varSel[0] = cp.selectSmallest(cp.domainSize());
-    IloIntVarChooser varChooser = cp.intVarChooser(varSel);
 
-    IloValueSelector[] valSel = new IloValueSelector[1];
-    valSel[0] =  cp.selectLargest(cp.valueSuccessRate());
-    IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
-
-    cp.setSearchPhases(cp.searchPhase(varChooser, valueChooser));
-  }
-
-  // works very well on non 21s
-  public IloSearchPhase[] useLargestImpact(IloCP cp) throws IloException {
+  // works very well on non 28s
+  public IloSearchPhase useSmallestDomain(IloCP cp, IloIntVar[] vars) throws IloException {
     IloVarSelector[] varSel = new IloVarSelector[2];
     varSel[0] = cp.selectSmallest(cp.domainSize());
     varSel[1] = cp.selectRandomVar();
@@ -138,10 +127,31 @@ public class CPInstance
     valSel[1] = cp.selectRandomValue();
     IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
 
-    IloSearchPhase[] phases = new IloSearchPhase[1];
-    phases[0] = cp.searchPhase(varChooser, valueChooser);
+    return cp.searchPhase(vars, varChooser, valueChooser);
+  }
 
-    return phases;
+  // works very well on non 21s
+  public IloSearchPhase useImpact(IloCP cp, IloIntVar[] vars) throws IloException {
+    IloVarSelector[] varSel = new IloVarSelector[2];
+    varSel[0] = cp.selectLargest(cp.varImpact());
+    varSel[1] = cp.selectRandomVar();
+    IloIntVarChooser varChooser = cp.intVarChooser(varSel);
+
+    IloValueSelector[] valSel = new IloValueSelector[2];
+    valSel[0] = cp.selectLargest(cp.valueLocalImpact());
+    valSel[1] = cp.selectRandomValue();
+    IloIntValueChooser valueChooser =  cp.intValueChooser(valSel);
+
+    return cp.searchPhase(vars, varChooser, valueChooser);
+  }
+
+  private IloIntVar[] flatten(IloIntVar[][] x) {
+    IloIntVar[] x_flat = new IloIntVar[x[0].length * x.length];
+    int index = 0;
+    for(int i = 0; i < x.length; i++)
+      for(int j = 0; j < x[0].length; j++)
+        x_flat[index++] = x[i][j];
+    return x_flat;
   }
 
   public void solve()
@@ -159,7 +169,7 @@ public class CPInstance
       // Uncomment this: to set the solver output level if you wish
       // cp.setParameter(IloCP.IntParam.LogVerbosity, IloCP.ParameterValues.Quiet);
       cp.setParameter(IloCP.IntParam.RandomSeed, 6586);
-      IloSearchPhase[] phases = useLargestImpact(cp);
+
 
       // Assigned Shifts
       IloIntVar[][] assignments = new IloIntVar[numDays][numEmployees];
@@ -268,6 +278,12 @@ public class CPInstance
           cp.add(cp.le(cp.count(employeeConcecutiveShifts, 1), maxConsecutiveNightShift));
         }
       }
+
+
+      IloSearchPhase[] phases = new IloSearchPhase[3];
+      phases[0] = useSmallestDomain(cp, flatten(assignments));
+      phases[1] = useImpact(cp, flatten(mindDemands));
+      phases[2] = useImpact(cp, flatten(hoursWorked));
 
 
       double failLimit = 100;
