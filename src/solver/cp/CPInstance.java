@@ -417,21 +417,21 @@ public class CPInstance
             }
           }
 
-          //        cp.printInformation();
-          //        for (int employee = 0; employee < numEmployees; employee++) {
-          //          System.out.print("E"+(employee+1)+": ");
-          //          System.out.print(Arrays.toString(solvedHours[employee]));
-          //          System.out.print(", ");
-          //          System.out.println(Arrays.toString(solvedAssignments[employee]));
-          //        }
-          //        for (int day = 0; day < numDays; day++) {
-          //          System.out.print(Arrays.toString(minDemandDayShift[day]));
-          //          System.out.print(" ");
-          //        }
-          //        System.out.println("");
-          //
-          ////         Uncomment this: for poor man's Gantt Chart to display schedules
-          //        prettyPrint(numEmployees, numDays, beginED, endED);
+//          cp.printInformation();
+//          for (int employee = 0; employee < numEmployees; employee++) {
+//            System.out.print("E"+(employee+1)+": ");
+//            System.out.print(Arrays.toString(solvedHours[employee]));
+//            System.out.print(", ");
+//            System.out.println(Arrays.toString(solvedAssignments[employee]));
+//          }
+//          for (int day = 0; day < numDays; day++) {
+//            System.out.print(Arrays.toString(minDemandDayShift[day]));
+//            System.out.print(" ");
+//          }
+//          System.out.println("");
+//
+//  //         Uncomment this: for poor man's Gantt Chart to display schedules
+//          prettyPrint(numEmployees, numDays, beginED, endED);
           break;
         } else if (testNum > 10000) {
           System.out.println("No Solution found!");
