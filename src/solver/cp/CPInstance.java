@@ -291,7 +291,6 @@ public class CPInstance
 //        cp.setSearchPhases(phases[i]);
 //      }
 
-      useSearchPhaseLargestImpact(cp);
 
       if(cp.solve())
       {
