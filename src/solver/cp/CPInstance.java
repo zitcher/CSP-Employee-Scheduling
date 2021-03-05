@@ -329,7 +329,7 @@ public class CPInstance
 
       // It is known that night shifts are stressful, therefore night shifts cannot follow each other
       // max number of total night shifts per employee
-      int minTotalOffShift = 2;
+      // int minTotalOffShift = 2;
       for (int employee = 0; employee < numEmployees; employee++) {
         IloIntExpr[] employeeShifts = new IloIntExpr[numDays];
         for (int day = 0; day < numDays; day++) {
@@ -337,9 +337,10 @@ public class CPInstance
         }
         // must work under max night shifts
         cp.add(cp.le(cp.count(employeeShifts, 1), maxTotalNightShift));
+
         // quality-related
-        cp.add(cp.ge(cp.count(employeeShifts, 0), minTotalOffShift));
-        
+        // cp.add(cp.ge(cp.count(employeeShifts, 0), minTotalOffShift));
+
         for (int day = 0; day < numDays - maxConsecutiveNightShift; day++) {
           IloIntExpr[] employeeConcecutiveShifts = new IloIntExpr[maxConsecutiveNightShift + 1];
           for (int concec = 0; concec < maxConsecutiveNightShift + 1; concec++) {
@@ -389,32 +390,34 @@ public class CPInstance
           }
 
           //compute metrics, per day per employee
-          float avg_offshifts = 0;
-          float avg_nightshifts = 0;
-          float avg_workinghours = 0;
-          int[] number_of_offshifts_per_employee = new int[numEmployees];
-          int[] number_of_nightshifts_per_employee = new int[numEmployees];
-          int[] number_of_workinghours_per_employee = new int[numEmployees];
-          for (int employee = 0; employee < numEmployees; employee++){
-            for(int day = 0; day < numDays; day++){
-              if(solvedAssignments[employee][day] == 0){
-                number_of_offshifts_per_employee[employee] += 1;
-              }
-              if(solvedAssignments[employee][day] == 1){
-                number_of_nightshifts_per_employee[employee] += 1;
-              }
-              number_of_workinghours_per_employee[employee] += solvedHours[employee][day];
-            }
-            avg_offshifts += number_of_offshifts_per_employee[employee] / (float)numDays;
-            avg_nightshifts += number_of_nightshifts_per_employee[employee] / (float)numDays;
-            avg_workinghours += number_of_workinghours_per_employee[employee] / (float)numDays;
-          }
-          avg_offshifts = avg_offshifts / number_of_offshifts_per_employee.length;
-          avg_nightshifts = avg_nightshifts / number_of_nightshifts_per_employee.length;
-          avg_workinghours = avg_workinghours / number_of_workinghours_per_employee.length;
-          System.out.println(avg_offshifts);
-          System.out.println(avg_nightshifts);
-          System.out.println(avg_workinghours);
+          // float avg_offshifts = 0;
+          // float avg_nightshifts = 0;
+          // float avg_workinghours = 0;
+          // int[] number_of_offshifts_per_employee = new int[numEmployees];
+          // int[] number_of_nightshifts_per_employee = new int[numEmployees];
+          // int[] number_of_workinghours_per_employee = new int[numEmployees];
+          // for (int employee = 0; employee < numEmployees; employee++){
+          //   for(int day = 0; day < numDays; day++){
+          //     if(solvedAssignments[employee][day] == 0){
+          //       number_of_offshifts_per_employee[employee] += 1;
+          //     }
+          //     if(solvedAssignments[employee][day] == 1){
+          //       number_of_nightshifts_per_employee[employee] += 1;
+          //     }
+          //     number_of_workinghours_per_employee[employee] += solvedHours[employee][day];
+          //   }
+          //   //System.out.println(number_of_offshifts_per_employee[employee]);
+          //   avg_offshifts += number_of_offshifts_per_employee[employee] / (float)numDays;
+          //   avg_nightshifts += number_of_nightshifts_per_employee[employee] / (float)numDays;
+          //   avg_workinghours += number_of_workinghours_per_employee[employee] / (float)numDays;
+          // }
+          // avg_offshifts = avg_offshifts / number_of_offshifts_per_employee.length;
+          // avg_nightshifts = avg_nightshifts / number_of_nightshifts_per_employee.length;
+          // avg_workinghours = avg_workinghours / number_of_workinghours_per_employee.length;
+          // System.out.println("Metrics:");
+          // System.out.printf("Avg Off Shifts: %2f ", avg_offshifts);
+          // System.out.printf("Avg Night Shifts: %2f ", avg_nightshifts);
+          // System.out.printf("Avg Working Hours: %2f ", avg_workinghours);
 
           // fill beginED and endED arrays
           for (int employee = 0; employee < numEmployees; employee++) {
